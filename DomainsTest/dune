@@ -1,0 +1,17 @@
+(executable
+  (name square_domain)
+  (modules square_domain))
+  
+ (executable
+  (name grep)
+  (libraries domainslib unix str)
+  (modules grep)
+  (modes byte exe))
+
+   
+ (executable
+  (name countLines)
+  (libraries domainslib unix str)
+  (modules countLines)
+  (modes byte exe))
+  
