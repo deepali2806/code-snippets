@@ -47,4 +47,4 @@ let () =
     );
     let t2 = Eio.Time.now clock in
     traceln "Final count is %d \nTime Difference %f" (Atomic.get count) (t2-.t1);
-    traceln "Switch is finished";;
+    traceln "\nSwitch is finished"
