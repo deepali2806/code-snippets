@@ -1,7 +1,8 @@
 open Unix;;
-let buffer_size = 200
 
-let num_domains = 4
+let num_domains = try int_of_string Sys.argv.(1) with _ -> 1
+let buffer_size = try int_of_string Sys.argv.(2) with _ ->  4096
+
 
 let rec countInBuffer buffer noOfBytes init = 
   if noOfBytes = 0 && (Bytes.get buffer noOfBytes) = '\n'
@@ -39,7 +40,7 @@ let parallel_line_count pool filename =
 
 let main =
     let start = Unix.gettimeofday () in
-    let filename = Sys.argv.(1) in
+    let filename = Sys.argv.(3) in
     let pool = Domainslib.Task.setup_pool ~num_additional_domains:(num_domains - 1) () in
     let _ = parallel_line_count pool filename in
     let stop = Unix.gettimeofday () in
