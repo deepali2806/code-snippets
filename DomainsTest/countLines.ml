@@ -22,21 +22,23 @@ let parallel_line_count pool filename =
   let fd_in = openfile filename [O_RDONLY] 0 in
   let st = fstat fd_in in 
   let i_n = (st.st_size / buffer_size) in
-  let m = Mutex.create () in
+  (* let m = Mutex.create () in *)
   let v = Domainslib.Task.parallel_for_reduce ~start:0 ~finish:(i_n) ~body:(fun i ->
+
+        let fd = openfile filename [O_RDONLY] 0 in 
         let offset = i*buffer_size in    
         let buffer = Bytes.create buffer_size in
 
-        Mutex.lock m;
-        let _ = lseek fd_in (offset) SEEK_SET in
-        let noOfBytes = read fd_in buffer 0 buffer_size in
-        Mutex.unlock m;
+        let _ = lseek fd (offset) SEEK_SET in
+        let noOfBytes = read fd buffer 0 buffer_size in
 
         let cnt = countInBuffer buffer (noOfBytes-1) 0 in
         (* Printf.printf "\nLength of cnt %d" cnt;  *)
+        close fd;
         cnt
   ) pool (+) 0 in
-    Printf.printf "Count of Lines %d" v
+    Printf.printf "Count of Lines %d" v;
+    close fd_in
 
 let main =
     let start = Unix.gettimeofday () in
