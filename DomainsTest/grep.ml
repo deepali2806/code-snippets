@@ -1,7 +1,7 @@
 open Unix;;
-let buffer_size = 200
+let num_domains = try int_of_string Sys.argv.(1) with _ -> 1
+let buffer_size = try int_of_string Sys.argv.(2) with _ ->  4096
 
-let num_domains = 4
 (* a-z \n *)
 let lastTable = Array.make 128 (-1)
 
@@ -41,10 +41,8 @@ if i = j then  str ^ (String.make 1 stringBuffer.[j])
 let rec boyerMooreHelper stringBuffer pattern lastTable i j =
   let m = (String.length pattern) in 
     let n = (String.length stringBuffer) in 
-    (* Printf.printf "I %d and j %d stringBuffer i " i j ; *)
     if i >= n 
     then
-            (* (Printf.printf "Reached here \n" ; *)
       -1
     else  
       (
@@ -54,17 +52,17 @@ let rec boyerMooreHelper stringBuffer pattern lastTable i j =
                   if j = 0 
                   then 
                     begin
-                      Unix.sleep (Domain.self ():> int);
-                      (* let foundString = append (prevLineIndex i stringBuffer) (nextLineIndex i stringBuffer) stringBuffer "" in *)
-                      (* Format.printf "%s%!" foundString; *)
-                      for x = (prevLineIndex i stringBuffer) to (nextLineIndex i stringBuffer)
+                      (* Unix.sleep (Domain.self ():> int); *)
+                      let foundString = append (prevLineIndex i stringBuffer) (nextLineIndex i stringBuffer) stringBuffer "" in 
+                       Format.printf "%s%!" foundString;
+                      (* for x = (prevLineIndex i stringBuffer) to (nextLineIndex i stringBuffer)
                       do
                       Printf.printf "%c" (try stringBuffer.[x] with _ -> Printf.printf "Error here ";'a')
-                      done;
+                      done; *)
                       boyerMooreHelper stringBuffer pattern lastTable ((nextLineIndex i stringBuffer)) (m-1)                    
                     end
-                  else
-                    boyerMooreHelper stringBuffer pattern lastTable (i-1) (j-1)
+                  else(
+                    boyerMooreHelper stringBuffer pattern lastTable (i-1) (j-1))
                 )
         else
             let p = i + m - (min j (1+(lastTable.((Char.code stringBuffer.[i])))))
@@ -74,14 +72,13 @@ let rec boyerMooreHelper stringBuffer pattern lastTable i j =
 let boyerMoore stringBuffer pattern lastTable = 
   let m = (String.length pattern) in boyerMooreHelper stringBuffer pattern lastTable (m-1) (m-1)
 
-let rec readTillNewlineFound fd_in newOffset newByteSequence =
+let rec readTillNewlineFound fd newOffset newByteSequence =
   let singleByte = Bytes.create 1 in
-  let _ = lseek fd_in (newOffset) SEEK_SET in
-  let noOfBytes = (read fd_in singleByte 0 1) in
+  let _ = lseek fd (newOffset) SEEK_SET in
+  let noOfBytes = (read fd singleByte 0 1) in
   if noOfBytes <= 0
   then
       begin 
-      (* Printf.printf "%c" (Bytes.get singleByte 0); *)
       newByteSequence
       end
   else
@@ -89,32 +86,31 @@ let rec readTillNewlineFound fd_in newOffset newByteSequence =
         if ((Bytes.get singleByte 0) = '\n')
           then  
           begin
-          (* Printf.printf "%c" (Bytes.get singleByte 0); *)
           newByteSequence
           end
         else  
           begin 
-          (* Printf.printf "%c" (Bytes.get singleByte 0); *)
-          readTillNewlineFound fd_in (newOffset+1) (Bytes.cat newByteSequence singleByte)
+          readTillNewlineFound fd (newOffset+1) (Bytes.cat newByteSequence singleByte)
           end
     end
 
 
-let parallel_patternMatch pool pattern lastTable =
-  let fd_in = openfile "/home/deepali/test1.txt" [O_RDONLY] 0 in
+let parallel_patternMatch pool pattern filename =
+  let fd_in = openfile filename [O_RDONLY] 0 in
   let st = fstat fd_in in 
   let i_n = (st.st_size / buffer_size) in
-    (* Printf.printf "\nI_n %d " i_n; *)
 
   Domainslib.Task.parallel_for pool ~start:0 ~finish:(i_n) ~body:(fun i ->
   let offset = i*buffer_size in
+  let fd = openfile filename [O_RDONLY] 0 in
+
   if offset = 0
   then 
     begin
           let buffer = Bytes.create buffer_size in
-          let _ = lseek fd_in (offset) SEEK_SET in
-          let noOfBytes = read fd_in buffer 0 buffer_size in
-          (* Printf.printf "\nnoOfbytes %d " noOfBytes; *)
+          let _ = lseek fd (offset) SEEK_SET in
+          let noOfBytes = read fd buffer 0 buffer_size in
+
           if noOfBytes < buffer_size
           then
               begin
@@ -133,23 +129,20 @@ let parallel_patternMatch pool pattern lastTable =
                   end 
                 else
                   begin
-                          (* Printf.printf "\nReached in else and then else";                       *)
-                      let newOffset = offset + noOfBytes in
-                      let newByteSequence = Bytes.create 1 in
-                      let newByte = readTillNewlineFound fd_in newOffset newByteSequence in 
+                      let newOffset = offset + noOfBytes - 1 in
+                      let newByteSequence = Bytes.empty in
+                      let newByte = readTillNewlineFound fd newOffset newByteSequence in 
                       let stringBuffer = Bytes.to_string (Bytes.cat buffer newByte) in 
-                          (* Printf.printf "\nstringbuffer s%s" stringBuffer; *)
-                          let _ =  boyerMoore stringBuffer pattern lastTable in 
-                          ()    
+                      let _ =  boyerMoore stringBuffer pattern lastTable in 
+                      ()    
                   end
               end
     end
   else
     begin
           let buffer = Bytes.create (buffer_size+1) in
-          let _ = lseek fd_in (offset) SEEK_SET in
-          let noOfBytes = read fd_in buffer 0 (buffer_size+1) in
-          (* Printf.printf "\nnoOfbytes %d " noOfBytes; *)
+          let _ = lseek fd (offset) SEEK_SET in
+          let noOfBytes = read fd buffer 0 (buffer_size+1) in
           if (Bytes.get buffer 0) = '\n' 
           then 
               begin 
@@ -172,22 +165,19 @@ let parallel_patternMatch pool pattern lastTable =
                             end 
                           else
                             begin
-                                    (* Printf.printf "\nReached in else and then else";                       *)
                                 let buffer = try Bytes.sub buffer 1 buffer_size with  _ -> Printf.printf "\nError here 3"; buffer in 
-                                let newOffset = offset + noOfBytes in
-                                let newByteSequence = Bytes.create 1 in
-                                let newByte = readTillNewlineFound fd_in newOffset newByteSequence in 
+                                let newOffset = offset + noOfBytes - 1 in
+                                let newByteSequence = Bytes.empty in
+                                let newByte = readTillNewlineFound fd newOffset newByteSequence in 
                                 let stringBuffer = Bytes.to_string (Bytes.cat buffer newByte) in 
-                                    (* Printf.printf "\nstringbuffer 3 %s" stringBuffer; *)
-                                    let _ =  boyerMoore stringBuffer pattern lastTable in 
-                                    ()    
+                                let _ =  boyerMoore stringBuffer pattern lastTable in 
+                                ()    
                             end
                         end
               end
           else    
             begin
                   let index = try Bytes.index buffer '\n' with _ -> 0 in
-                  (* Printf.printf "\n value of index  %d " index;  *)
 
                   if noOfBytes < (buffer_size+1)
                     then
@@ -207,30 +197,29 @@ let parallel_patternMatch pool pattern lastTable =
                             end 
                           else
                             begin
-                                    (* Printf.printf "\nReached in else and then else";  *)
-                                    (* Printf.printf "\n value of index  %d  buffer size%d " index buffer_size;  *)
                                 let buffer = try Bytes.sub buffer index (buffer_size-index) with _ -> Printf.printf "\nError here 6  "; buffer in 
-                                let newOffset = offset + noOfBytes in
-                                let newByteSequence = Bytes.create 1 in
-                                let newByte = readTillNewlineFound fd_in newOffset newByteSequence in 
+                                let newOffset = offset + noOfBytes-1 in
+                                let newByteSequence = Bytes.empty in
+                                let newByte = readTillNewlineFound fd newOffset newByteSequence in 
                                 let stringBuffer = Bytes.to_string (Bytes.cat buffer newByte) in 
-                                    (* Printf.printf "\nstringbuffer 6 %s" stringBuffer; *)
-                                    let _ =  boyerMoore stringBuffer pattern lastTable in 
-                                    ()    
+                                let _ =  boyerMoore stringBuffer pattern lastTable in 
+                                ()    
                             end
                         end
 
             end
 
           
-    end 
-  
+    end; 
+    close fd
   );
   close fd_in
 
 let main =
-    preprocess Sys.argv.(1) lastTable;
+    let pattern = Sys.argv.(3) in 
+    let filename = Sys.argv.(4) in
+    preprocess pattern lastTable;
     let pool = Domainslib.Task.setup_pool ~num_additional_domains:(num_domains - 1) () in
-    let _ = parallel_patternMatch pool Sys.argv.(1) lastTable in
+    let _ = parallel_patternMatch pool pattern filename in
     Domainslib.Task.teardown_pool pool;
-    Printf.printf "Done \n"
+    Printf.printf "\nDone \n"
