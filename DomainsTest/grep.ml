@@ -52,9 +52,10 @@ let rec boyerMooreHelper iBuffer pattern lastTable i j =
                   then 
                     begin
                       let x = (nextLineIndex i iBuffer) in 
+                      (* Unix.sleep (5); *)
                       let foundString = append (prevLineIndex i iBuffer) x iBuffer (Bytes.empty) in 
                       Format.printf "%s%!" (Bytes.to_string foundString);
-                      boyerMooreHelper iBuffer pattern lastTable x (m-1)                    
+                      boyerMooreHelper iBuffer pattern lastTable (x+1) (m-1)                    
                     end
                   else(
                     boyerMooreHelper iBuffer pattern lastTable (i-1) (j-1))
@@ -201,8 +202,8 @@ let parallel_patternMatch pool pattern filename =
   close fd_in
 
 let main =
-    let pattern = Sys.argv.(3) in 
-    let filename = Sys.argv.(4) in
+    let pattern = Sys.argv.(4) in 
+    let filename = Sys.argv.(3) in
 
     let start = Unix.gettimeofday () in
     preprocess pattern lastTable;
@@ -210,4 +211,4 @@ let main =
     let _ = parallel_patternMatch pool pattern filename in
     let stop = Unix.gettimeofday () in
     Domainslib.Task.teardown_pool pool;
-    Printf.printf "\nDone \nTime %fs\n" ( stop -. start)
+    Printf.printf "\nDone \nTime %f\n" ( stop -. start)

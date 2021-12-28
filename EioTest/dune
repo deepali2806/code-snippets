@@ -6,3 +6,11 @@
  (modules countLinesEio)
  (libraries logs.fmt fmt.tty eio_linux))
 
+
+ 
+(executable
+ (name grepEio)
+ (enabled_if (= %{system} "linux"))
+ (modules grepEio)
+ (libraries logs.fmt fmt.tty eio_linux))
+

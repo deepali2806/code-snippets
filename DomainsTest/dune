@@ -1,5 +1,6 @@
 (executable
   (name square_domain)
+  (libraries domainslib unix str)
   (modules square_domain))
   
  (executable
