@@ -43,7 +43,9 @@ Switch.run @@ fun sw ->
                         let off = if flag = 0 then i*blkSize
                                   else ((no_fibres/2)+i)*blkSize          
                         in
-                        let noOfBytes = try read_upto fd ~file_offset:(Int63.of_int off) buf blkSize with End_of_file -> 0 in 
+                        let noOfBytes = try read_upto fd ~file_offset:(Int63.of_int off) buf blkSize with
+                         End_of_file -> 0
+                         | _ -> 0 in 
                         if noOfBytes = 0 then
                             free buf
                         else 
