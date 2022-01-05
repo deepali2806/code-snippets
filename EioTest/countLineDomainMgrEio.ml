@@ -23,22 +23,17 @@ let rec countInBuffer buffer noOfBytes init =
     end
 
 
-let sum_to flag =
+let lineCount flag =
 Switch.run @@ fun sw ->
     let fd = Unix.handle_unix_error (openfile ~sw filename Unix.[O_RDONLY]) 0 in 
     let st = fstat fd in
     let n_var = (st.st_size / blkSize) in
     let no_fibres =
-    if (n_var mod 2) = 0
-    then n_var+2
-    else n_var+1
+        if (n_var mod 2) = 0
+        then n_var+2
+        else n_var+1
     in
-    (* traceln "number of fibres %d , %d" no_fibres n_var; *)
-
-    (* let clock = Eio.Stdenv.clock _env in *)
     let count = Atomic.make 0 in 
-    (* let t1 = Eio.Time.now clock in *)
-    (* traceln "The time is now %f" t1; *)
     Switch.run (fun sw ->
         for i = 0 to (no_fibres/2)-1
         do
@@ -48,18 +43,16 @@ Switch.run @@ fun sw ->
                         let off = if flag = 0 then i*blkSize
                                   else ((no_fibres/2)+i)*blkSize          
                         in
-                        (* let _ = Unix.lseek (Eio_linux.FD.to_unix fd) off SEEK_SET in *)
                         let noOfBytes = try read_upto fd ~file_offset:(Int63.of_int off) buf blkSize with End_of_file -> 0 in 
                         if noOfBytes = 0 then
                             free buf
                         else 
                         begin
-                        let buffer = Uring.Region.to_cstruct ~len:noOfBytes buf in
-                        let cnt = countInBuffer buffer (noOfBytes-1) 0 in
-                        let _ = Atomic.fetch_and_add count cnt in 
-                        (* traceln "\nCount in each fibre %d currentvalue %d " cnt currentVal; *)
-                        (* traceln "Offset and number of fibre %d, %d" off i; *)
-		                    free buf
+                            let buffer = Uring.Region.to_cstruct ~len:noOfBytes buf in
+                            let cnt = countInBuffer buffer (noOfBytes-1) 0 in
+                            let _ = Atomic.fetch_and_add count cnt in 
+                            (* traceln "Offset and number of fibre %d, %d" off i; *)
+                            free buf
                         end
             );
         done	
@@ -68,11 +61,10 @@ Switch.run @@ fun sw ->
 
 
 let main ~domain_mgr env =
-  let test i=
-                       
-    traceln "Iteration.%d = %d" i
+  let test i=                     
+    traceln "Domain number %d count returned = %d" i
       (Eio.Domain_manager.run domain_mgr
-        (fun () -> sum_to i))
+        (fun () -> lineCount i))
   in
   let clock = Eio.Stdenv.clock env in
   let t1 = Eio.Time.now clock in
