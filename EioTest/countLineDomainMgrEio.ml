@@ -30,8 +30,8 @@ Switch.run @@ fun sw ->
     let n_var = (st.st_size / blkSize) in
     let no_fibres =
         if (n_var mod 2) = 0
-        then n_var+2
-        else n_var+1
+        then n_var
+        else n_var
     in
     let count = Atomic.make 0 in 
     Switch.run (fun sw ->
