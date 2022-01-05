@@ -1,4 +1,10 @@
 
+(executable
+ (name countLineDomainMgrEio)
+ (enabled_if (= %{system} "linux"))
+ (modules countLineDomainMgrEio)
+ (libraries logs.fmt fmt.tty eio_linux eio_main))
+
  
 (executable
  (name countLinesEio)
