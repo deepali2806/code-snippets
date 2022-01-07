@@ -11,7 +11,7 @@ let rec countInBuffer buffer noOfBytes init =
       countInBuffer buffer (noOfBytes-1) (init + 1)
 
 let () = 
-    run @@ fun _env ->
+    run ~block_size:16384 @@ fun _env ->
     Switch.run @@ fun sw ->
     let fd = Unix.handle_unix_error (openfile ~sw (Sys.argv.(2)) Unix.[O_RDONLY]) 0 in 
     let st = fstat fd in
