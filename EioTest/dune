@@ -14,6 +14,12 @@
  (libraries logs.fmt fmt.tty eio_linux))
 
 
+(executable
+ (name countCharsEio)
+ (enabled_if (= %{system} "linux"))
+ (modules countCharsEio)
+ (libraries logs.fmt fmt.tty eio_linux))
+
  
 (executable
  (name grepEio)

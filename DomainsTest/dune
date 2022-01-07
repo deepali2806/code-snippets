@@ -16,3 +16,9 @@
   (modules countLines)
   (modes byte exe))
   
+ 
+ (executable
+  (name countChars)
+  (libraries domainslib unix str)
+  (modules countChars)
+  (modes byte exe))
