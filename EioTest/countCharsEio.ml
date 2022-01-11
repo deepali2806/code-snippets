@@ -1,44 +1,50 @@
 open Eio.Std
 open Eio_linux
 module Int63 = Optint.Int63
-let blkSize = try int_of_string Sys.argv.(1) with _ -> 4096
+let block_size = try int_of_string Sys.argv.(1) with _ -> 4096
 let fibres = Eio.Semaphore.make 64
 
 let rec countInBuffer buffer noOfBytes init = 
   if noOfBytes = 0
-    then init+1
+    then init
   else
       countInBuffer buffer (noOfBytes-1) (init + 1)
 
+
+let rec read_exactly ~file_offset infd buf =
+  let got = Eio_linux.readv ~file_offset infd [buf] in
+  if got <> Cstruct.length buf then
+    read_exactly ~file_offset:(Int63.add file_offset (Int63.of_int got)) infd (Cstruct.shift buf got)
+
 let () = 
     run ~block_size:16384 @@ fun _env ->
+    let filename = Sys.argv.(2) in
     Switch.run @@ fun sw ->
-    let fd = Unix.handle_unix_error (openfile ~sw (Sys.argv.(2)) Unix.[O_RDONLY]) 0 in 
+    let fd = Unix.handle_unix_error (openfile ~sw filename Unix.[O_RDONLY]) 0 in 
     let st = fstat fd in
-    let no_fibres = (st.st_size / blkSize) in
+    let file_size = Int63.of_int st.st_size in
     let clock = Eio.Stdenv.clock _env in
     let count = ref 0 in 
     let t1 = Eio.Time.now clock in
-    (* traceln "The time is now %f" t1; *)
-    Switch.run (fun sw ->
-        for i = 0 to no_fibres
-        do
-            Eio.Semaphore.acquire fibres;
-            Fibre.fork ~sw
-            (fun () ->  let buf = alloc () in
-                        let off = i*blkSize in
-                        (* let _ = Unix.lseek (Eio_linux.FD.to_unix fd) off SEEK_SET in *)
-                        let noOfBytes = read_upto fd ~file_offset:(Int63.of_int off) buf blkSize in 
-                        let buffer = Uring.Region.to_cstruct ~len:noOfBytes buf in
-                        let cnt = countInBuffer buffer (noOfBytes-1) 0 in
-                         count := !count + cnt;
-                        (* traceln "\nCount in each fibre %d currentvalue %d " cnt currentVal; *)
-                        (* traceln "Offset and number of fibre %d, %d" off i; *)
-                        Eio.Semaphore.release fibres;
-		                    free buf
+    Switch.run ( fun sw ->
+      let rec read_block file_offset =
+        let remaining = Int63.(sub file_size file_offset) in
+        if remaining <> Int63.zero then 
+        begin
+          let len = Int63.to_int (min (Int63.of_int block_size) remaining) in
+          Eio.Semaphore.acquire fibres;
+          Fibre.fork ~sw (fun () ->
+              let buf = Cstruct.create_unsafe len in
+              read_exactly ~file_offset:file_offset fd buf;
+              let cnt = countInBuffer buf len 0 in
+              count := !count + cnt;
+              Eio.Semaphore.release fibres
             );
-        done	
-    );
+          read_block Int63.(add file_offset (of_int len))
+        end
+      in
+      read_block Int63.zero);
+
     let t2 = Eio.Time.now clock in
     traceln "Final count is %d \nTime Difference %f" !count (t2-.t1);
     traceln "\nSwitch is finished"
