@@ -46,5 +46,37 @@ let () =
       read_block Int63.zero);
 
     let t2 = Eio.Time.now clock in
-    traceln "Final count is %d \nTime Difference %f" !count (t2-.t1);
+    traceln "Final count is %d \nTime Difference using readv %f" !count (t2-.t1);
+count := 0;
+let _ = Unix.lseek (Eio_linux.FD.to_unix fd) 0 SEEK_SET in
+    let t1 = Eio.Time.now clock in
+    Switch.run ( fun sw ->
+      let rec read_block file_offset =
+        let remaining = Int63.(sub file_size file_offset) in
+        (* traceln "Reached here %d" (Int63.to_int remaining); *)
+        if remaining <> Int63.zero then 
+        begin
+          let len = Int63.to_int (min (Int63.of_int block_size) remaining) in
+          Eio.Semaphore.acquire fibres;
+          Fibre.fork ~sw (fun () ->
+              let buf = alloc () in
+              let _ = Eio_linux.read_exactly ~file_offset fd buf len in 
+              let buffer = Uring.Region.to_cstruct ~len:len buf in
+              let cnt = countInBuffer buffer len 0 in
+              count := !count + cnt;
+              free buf;
+              Eio.Semaphore.release fibres
+            );
+          read_block Int63.(add file_offset (of_int len))
+        end
+      in
+      read_block Int63.zero);
+
+    let t2 = Eio.Time.now clock in
+    traceln "Final count is %d \nTime Difference using Readupto %f" !count (t2-.t1);
+
+
+
+
+
     traceln "\nSwitch is finished"
