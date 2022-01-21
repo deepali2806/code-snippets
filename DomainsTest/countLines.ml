@@ -3,23 +3,6 @@ open Unix;;
 let num_domains = try int_of_string Sys.argv.(1) with _ -> 1
 let buffer_size = try int_of_string Sys.argv.(2) with _ ->  4096
 
-(* 
-let rec countInBuffer buffer noOfBytes init = 
-  if noOfBytes = 0 && (Bytes.get buffer noOfBytes) = '\n'
-  then
-    init + 1
-  else
-   if noOfBytes = 0
-    then init 
-  else
-    begin
-    if (Bytes.get buffer noOfBytes) = '\n' then
-      countInBuffer buffer (noOfBytes-1) (init + 1)
-    else
-      countInBuffer buffer (noOfBytes-1) init
-    end *)
-
-
 
 let countInBuffer buffer noOfBytes = 
 let total = ref 0 in
@@ -52,8 +35,8 @@ let parallel_line_count pool filename =
         (* close fd; *)
         cnt
   ) pool (+) 0 in
-    Printf.printf "Count of Lines %d" v
-    (* close fd_in *)
+    Printf.printf "Count of Lines %d" v;
+    close fd_in
 
 let main =
     let filename = Sys.argv.(3) in   
@@ -63,3 +46,21 @@ let main =
     let stop = Unix.gettimeofday () in
     Domainslib.Task.teardown_pool pool;
     Printf.printf "\nDone \nTime %f\n" ( stop -. start)
+
+
+(* 
+let rec countInBuffer buffer noOfBytes init = 
+  if noOfBytes = 0 && (Bytes.get buffer noOfBytes) = '\n'
+  then
+    init + 1
+  else
+   if noOfBytes = 0
+    then init 
+  else
+    begin
+    if (Bytes.get buffer noOfBytes) = '\n' then
+      countInBuffer buffer (noOfBytes-1) (init + 1)
+    else
+      countInBuffer buffer (noOfBytes-1) init
+    end *)
+

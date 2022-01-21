@@ -35,8 +35,13 @@ let rec countInBuffer buffer noOfBytes init =
   if noOfBytes = 0
     then init+1
   else
-      countInBuffer buffer (noOfBytes-1) (init + 1)
-     
+    begin
+    if ((Char.code (Bytes.get buffer noOfBytes)) < 128) || ((Char.code (Bytes.get buffer noOfBytes)) >= 0) 
+      then countInBuffer buffer (noOfBytes-1) (init + 1)
+    else 
+      countInBuffer buffer (noOfBytes-1) (init)
+     end
+
 let parallel_line_count pool filename =
   let fd_in = openfile filename [O_RDONLY] 0 in
   let st = fstat fd_in in 
@@ -58,8 +63,8 @@ let parallel_line_count pool filename =
         (* close fd; *)
         cnt
   ) pool (+) 0 in
-    Printf.printf "Count of Lines %d" v
-    (* close fd_in *)
+    Printf.printf "Count of Lines %d" v;
+    close fd_in
 
 let main =
     let filename = Sys.argv.(3) in   

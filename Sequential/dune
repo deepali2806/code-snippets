@@ -1,0 +1,13 @@
+
+ (executable
+  (name countLines)
+  (libraries unix str)
+  (modules countLines)
+  (modes byte exe))
+
+
+ (executable
+  (name countChars)
+  (libraries unix str)
+  (modules countChars)
+  (modes byte exe))
