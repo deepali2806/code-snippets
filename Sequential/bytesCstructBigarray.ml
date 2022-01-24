@@ -77,12 +77,12 @@ let test_bigarray () =
 
 
 let () = 
-    for _ = 0 to 4
-    do
+   (* for _ = 0 to 4
+    do*)
     (* Printf.printf "\nIteration %d------------------------------\n" i; *)
     let _ = test_bytes () in
     let _ = test_cstruct_str () in
     let _ = test_cstruct_ba () in
     let _ = test_bigarray () in
     Printf.printf "\n------------------------------";
-    done
+   (* done  *)
