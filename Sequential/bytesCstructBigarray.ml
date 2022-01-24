@@ -25,8 +25,6 @@ let rec countInBufferBytes buffer noOfBytes init =
      end
 
 
-
-
 let rec countInBufferBigarray buffer noOfBytes init = 
   if noOfBytes = 0
     then init+1
@@ -38,8 +36,9 @@ let rec countInBufferBigarray buffer noOfBytes init =
       countInBufferBigarray buffer (noOfBytes-1) (init)
      end
 
+
 let test_bytes () =
-    let buffer = Bytes.make block_size 'd' in
+    let buffer = Bytes.make block_size 'A' in
     let t1 = Unix.gettimeofday () in
     let _ = countInBufferBytes buffer (block_size-1) 0 in    
     let t2 = Unix.gettimeofday () in
@@ -47,13 +46,25 @@ let test_bytes () =
     (* Printf.printf "\nCount in Bytes %d" cnt *)
 
 
-let test_cstruct str =
+(* Cstruct created using of_bigarray *)
+let test_cstruct_ba () =
+    let b = Bigarray.Array1.create Char Bigarray.c_layout block_size in
+    let _ = Bigarray.Array1.fill b 'A' in    
+    let buffer = Cstruct.of_bigarray b in
+    let t1 = Unix.gettimeofday () in
+    let _ = countInBufferCstruct buffer (block_size-1) 0 in    
+    let t2 = Unix.gettimeofday () in
+    Printf.printf "\nTime Difference for Cstruct_ba\t %f" (t2-.t1)  
+
+
+(* Cstruct created using of_string *)
+let test_cstruct_str () =
+    let str = String.make block_size 'A' in
     let buffer = Cstruct.of_string str in
     let t1 = Unix.gettimeofday () in
     let _ = countInBufferCstruct buffer (block_size-1) 0 in    
     let t2 = Unix.gettimeofday () in
-    Printf.printf "\nTime Difference for Cstruct\t %f" (t2-.t1)   
-    (* Printf.printf "\nCount in Cstructs %d" cnt *)
+    Printf.printf "\nTime Difference for Cstruct_str  %f" (t2-.t1)  
 
 
 let test_bigarray () = 
@@ -63,15 +74,15 @@ let test_bigarray () =
     let _ = countInBufferBigarray buffer (block_size-1) 0 in    
     let t2 = Unix.gettimeofday () in
     Printf.printf "\nTime Difference for bigarray \t %f" (t2-.t1)   
-    (* Printf.printf "\nCount in bigarray %d" cnt *)
+
 
 let () = 
     for _ = 0 to 4
     do
     (* Printf.printf "\nIteration %d------------------------------\n" i; *)
     let _ = test_bytes () in
-    let str = String.make block_size 'd' in
-    let _ = test_cstruct str in
+    let _ = test_cstruct_str () in
+    let _ = test_cstruct_ba () in
     let _ = test_bigarray () in
     Printf.printf "\n------------------------------";
     done
