@@ -1,0 +1,50 @@
+(executable
+  (name square_domain)
+  (enabled_if (= %{system} "linux"))
+  (modules square_domain)
+  (libraries domainslib unix str logs.fmt fmt.tty eio_linux eio_main)
+   (modes byte exe)
+  )
+
+(executable
+  (name UsingDmnMngr)
+  (enabled_if (= %{system} "linux"))
+  (modules UsingDmnMngr)
+  (libraries domainslib unix str logs.fmt fmt.tty eio_linux eio_main)
+   (modes byte exe)
+  )
+
+
+(executable
+  (name test)
+  (enabled_if (= %{system} "linux"))
+  (modules test)
+  (libraries domainslib eio_linux eio_main eio_domainslib_interface)
+   (modes byte exe)
+  )
+
+
+
+(executable
+  (name UsingMvarFib)
+  (enabled_if (= %{system} "linux"))
+  (modules UsingMvarFib)
+  (libraries domainslib eio_linux eio_main eio_domainslib_interface)
+   (modes byte exe)
+  )
+
+(executable
+  (name server)
+  (enabled_if (= %{system} "linux"))
+  (modules server)
+  (libraries domainslib unix eio str logs.fmt fmt.tty eio_linux eio_main)
+   (modes byte exe)
+  )
+
+(executable
+  (name blockingFib)
+  (enabled_if (= %{system} "linux"))
+  (modules blockingFib)
+  (libraries domainslib unix str logs.fmt fmt.tty eio_linux eio_main)
+   (modes byte exe)
+  )
