@@ -26,12 +26,55 @@
 
 
 (executable
+  (name TestSwitch)
+  (enabled_if (= %{system} "linux"))
+  (modules TestSwitch)
+  (libraries domainslib eio_linux eio_main eio_domainslib_interface)
+   (modes byte exe)
+  )
+  
+(executable
   (name UsingMvarFib)
   (enabled_if (= %{system} "linux"))
   (modules UsingMvarFib)
   (libraries domainslib eio_linux eio_main eio_domainslib_interface)
    (modes byte exe)
   )
+
+(executable
+  (name FibServer)
+  (enabled_if (= %{system} "linux"))
+  (modules FibServer)
+  (libraries domainslib eio_linux eio_main eio_domainslib_interface)
+   (modes byte exe)
+  )
+
+
+  (executable
+  (name fibServerWoInterface)
+  (enabled_if (= %{system} "linux"))
+  (modules fibServerWoInterface)
+  (libraries domainslib eio_linux eio_main eio_domainslib_interface)
+   (modes byte exe)
+  )  
+
+
+  (executable
+  (name affectEio_cancelAffectThread)
+  (enabled_if (= %{system} "linux"))
+  (modules affectEio_cancelAffectThread)
+  (libraries affect eio_linux eio_luv eio_main eio_domainslib_interface)
+   (modes byte exe)
+  )  
+
+
+(executable
+  (name affectEioTest)
+  (enabled_if (= %{system} "linux"))
+  (modules affectEioTest)
+  (libraries affect eio_linux eio_main eio_domainslib_interface)
+  (modes byte exe)
+  )  
 
 (executable
   (name server)

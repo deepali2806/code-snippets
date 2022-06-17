@@ -28,9 +28,10 @@ let main =
 
   Fibre.fork ~sw 
   (fun () -> let t1 = Eio.Time.now clock in
-    traceln "Waiting for parallel answer = %d" x;   
+    
     let x = Promise.await promise in   
     let t2 = Eio.Time.now clock in
+    traceln "Waiting for parallel answer = %d" x;   
     traceln "Waiting Time for Parallel fibonacci %f" (t2-.t1)
   );
 
@@ -38,7 +39,7 @@ let main =
   Fibre.fork ~sw
     (fun () -> let t1 = Eio.Time.now clock in
           traceln "Calling parallel fibonacci";
-    let _ = Promise. fulfill resolver (fib_par pool n) in
+    Promise. resolve resolver (fib_par pool n);
           traceln "Parallel Fibonacci is done";
           let t2 = Eio.Time.now clock in
      traceln "Time Difference for Parallel fibonacci %f" (t2-.t1)
@@ -57,7 +58,7 @@ let main =
   (* let res = T.run pool (fun _ -> fib_par pool n) in *)
   let t2 = Eio.Time.now clock in
   traceln "Total Time Difference for fibonacci %f" (t2-.t1);
-  T.teardown_pool pool
+  (* T.teardown_pool pool *)
 
 (* 
 let square n = n * n
