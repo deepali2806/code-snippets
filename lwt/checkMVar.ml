@@ -1,11 +1,11 @@
 (* ocamlfind ocamlopt -package lwt,lwt.unix,lwt_ppx,eio_domainslib_interface,domainslib  -linkpkg -o checkMVar checkMVar.ml 
  *)
  open Printf
- open Eio_domainslib_interface
+ (* open Eio_domainslib_interface *)
  open Effect
  open Effect.Deep
  (* let promises = BatDynArray.create () *)
- let num_domains = try int_of_string Sys.argv.(1) with _ -> 1
+ (* let num_domains = try int_of_string Sys.argv.(1) with _ -> 1
  module T = Domainslib.Task
  
  exception Suspend_take
@@ -21,7 +21,7 @@
    else
      let a = T.async pool (fun _ -> fib_par pool (n-1)) in
      let b = T.async pool (fun _ -> fib_par pool (n-2)) in
-     T.await pool a + T.await pool b
+     T.await pool a + T.await pool b *)
  
  open Lwt.Infix
  
@@ -29,6 +29,7 @@
  module Sched = struct
        type 'a resumer = 'a -> unit
        type _ Effect.t += Suspend : ('a resumer -> unit) -> 'a Effect.t
+       type 'a suspend_fn = ('a resumer -> unit) -> 'a
  end
  
  
@@ -43,13 +44,13 @@
  
  let create v = ref (Full (v, Queue.create ()))
 
- let (some_function:('a Sched.resumer -> unit) option ref) = ref None
+ let some_function = ref None
  
  let get_funtion () =  !some_function
 
  let take mv =
   match !mv with
-  | Empty q -> some_function := Some (fun r -> Queue.push r q);
+  | Empty q -> 
                perform (Sched.Suspend (fun r -> Queue.push r q)) 
   | Full (v, q) ->
       if Queue.is_empty q then
@@ -63,7 +64,8 @@
 
  let put v mv =
    match !mv with
-   | Full (v', q) -> some_function := Some (fun r -> Queue.push (v,r) q);
+   | Full (v', q) -> 
+    (* some_function := Some ((fun r -> Queue.push (v,r) q)); *)
                     perform (Sched.Suspend (fun r -> Queue.push (v,r) q))
    | Empty q ->
        if Queue.is_empty q then
@@ -74,42 +76,28 @@
  
  end
  
+module MonadicMVar = struct
+  (* Each scheduler will have its own suspend_fn implementation, we can just have its basic definition that, 
+     it takes function f, and returns promise of the respective scheduler. *)
+  let suspend_fn f  = 
+                      let (promise, resolver) = Lwt.task () in 
+                      let resumer v = (Lwt.wakeup resolver v; ()) in
+                      f resumer;
+                      promise
+
+  let take m = try Lwt.return (MVar.take m) with
+                | Unhandled (Sched.Suspend f) -> suspend_fn f         
+
+  let put v m = try Lwt.return (MVar.put v m) with
+               | Unhandled (Sched.Suspend f) -> suspend_fn f
+  
+  end
+
+
+
  let m = MVar.create_empty ()
  
- let x = Lwt_mvar.create_empty ()
- 
- let suspend_take mv = 
-   (* When suspend function is mailnly to handle exception from take function *)
-       let f = ( match MVar.get_funtion () with
-                | None -> fun _ -> ()
-                | Some f -> f 
-       )
-       in 
-       printf "\nLwt: Are we reaching inside suspend function?%!";
-       let resumer v = (Lwt_mvar.put x v;()) in 
-       f resumer;
-       printf "\nLwt: We should block here now!%!";
-       let y = Lwt_mvar.take x in
-       y
- 
- let suspend_put v mv = 
-   let f = (
-        (match (!mv) with
-                 | MVar.(Full (v', q)) ->(fun r -> Queue.push (v, r) q)
-                 | _ -> fun r -> ())
-       )
-       in 
-       printf "\nLwt: Are we reaching inside suspend function?%!";
-       let resumer v = (Lwt_mvar.take x;()) in 
-       f resumer;
-       printf "\nLwt: We should block here now!%!";
-       let y = Lwt_mvar.put x v in
-       y
- 
- 
- 
- 
- 
+(*  
  let main () =
   let lwt_domain = Domain.spawn( fun () ->
  
@@ -119,7 +107,7 @@
      in v) 
      (fun v ->  printf "\nLwt: Hello %d%!" v; Lwt.return ())
      (fun e -> match e with 
-               | Suspend_take -> let y = suspend_take m in printf "\nLwt: Ohk so reaching here %!";y >>= 
+               | Suspend_take -> let y = suspend_fn m in printf "\nLwt: Ohk so reaching here %!";y >>= 
      fun v ->
      printf "\nHello %d%!" v; Lwt.return ())
  
@@ -147,4 +135,4 @@
      printf "\nBoth the domains are done completed%!";
      T.teardown_pool pool
  
- let  _ = main ()
+ let  _ = main () *)
