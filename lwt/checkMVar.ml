@@ -4,12 +4,8 @@
  (* open Eio_domainslib_interface *)
  open Effect
  open Effect.Deep
- (* let promises = BatDynArray.create () *)
- (* let num_domains = try int_of_string Sys.argv.(1) with _ -> 1
+ let num_domains = try int_of_string Sys.argv.(1) with _ -> 1
  module T = Domainslib.Task
- 
- exception Suspend_take
- (* exception Suspend_put of 'a *)
  
  
  let rec fib n =
@@ -21,7 +17,7 @@
    else
      let a = T.async pool (fun _ -> fib_par pool (n-1)) in
      let b = T.async pool (fun _ -> fib_par pool (n-2)) in
-     T.await pool a + T.await pool b *)
+     T.await pool a + T.await pool b
  
  open Lwt.Infix
  
@@ -44,9 +40,9 @@
  
  let create v = ref (Full (v, Queue.create ()))
 
- let some_function = ref None
+ (* let some_function = ref None
  
- let get_funtion () =  !some_function
+ let get_funtion () =  !some_function *)
 
  let take mv =
   match !mv with
@@ -74,56 +70,63 @@
          let resume = Queue.pop q in
          resume v
  
- end
+
+         (* let suspend_fn f  = 
+         let (promise, resolver) = Lwt.task () in 
+         let resumer v = (Lwt.wakeup resolver v; ()) in
+         f resumer;
+         promise *)
+
+let take_monad m = 
+  (* let flag = ref false in
+  let q = Queue.create () in  *)
+  let p:'a Lwt.t  = (try Lwt.return (take m) with
+          | Unhandled (Sched.Suspend f) -> 
+                          let (promise, resolver) = Lwt.task () in
+                          let resumer v = (Lwt.wakeup resolver v; ()) in
+                          f resumer;
+                          Obj.magic promise
+                  ) 
+  in p
+
+let put_monad v m = 
+  let v = (try (put v m) with
+          | Unhandled (Sched.Suspend f) -> 
+                          let (promise, resolver) = Lwt.task () in
+                          let resumer v = (Lwt.wakeup resolver v; ()) in
+                          f resumer) 
+  in Lwt.return v       
  
-module MonadicMVar = struct
+end
+ 
+(* module MonadicMVar = struct *)
   (* Each scheduler will have its own suspend_fn implementation, we can just have its basic definition that, 
      it takes function f, and returns promise of the respective scheduler. *)
-  let suspend_fn f  = 
-                      let (promise, resolver) = Lwt.task () in 
-                      let resumer v = (Lwt.wakeup resolver v; ()) in
-                      f resumer;
-                      promise
-
-  let take m = try Lwt.return (MVar.take m) with
-                | Unhandled (Sched.Suspend f) -> suspend_fn f         
-
-  let put v m = try Lwt.return (MVar.put v m) with
-               | Unhandled (Sched.Suspend f) -> suspend_fn f
   
-  end
-
-
-
- let m = MVar.create_empty ()
+                      
+  (* end *)
  
-(*  
- let main () =
+let m = MVar.create_empty ()
+ 
+let main () =
   let lwt_domain = Domain.spawn( fun () ->
  
    Lwt_main.run ( 
-     let _ = Lwt.try_bind (fun () -> let v = (try Lwt.return (MVar.take m) with
-                 | exn -> printf "Lwt: Inside Exception%!"; raise Suspend_take)
-     in v) 
-     (fun v ->  printf "\nLwt: Hello %d%!" v; Lwt.return ())
-     (fun e -> match e with 
-               | Suspend_take -> let y = suspend_fn m in printf "\nLwt: Ohk so reaching here %!";y >>= 
-     fun v ->
-     printf "\nHello %d%!" v; Lwt.return ())
- 
+     let p = Lwt.bind (let v = (MVar.take_monad m) in v) 
+                      (fun v ->  printf "\nLwt: Hello %d%!" v; Lwt.return ())
     in
-           Lwt.return (printf "\nLwt: Finally return%!")                                 
+             Lwt.return (printf "\nLwt: Finally return%!")                                 
  );
    
      ) in 
  
-     let pool = T.setup_pool ~num_additional_domains:(num_domains - 1) () 
+     let pool = T.setup_pool ~num_domains:(num_domains - 1) () 
      in
          T.run pool (fun () -> 
              (* T.parallel_for pool ~start:0 ~finish:(no_Fibers - 1) ~body:(fun i -> *)
                  let pr = T.async pool ( fun _ ->
                      printf "\nDomainslib: Async Running in domain %d%!" (Domain.self () :> int);
-                         let v = fib_par pool (40) in
+                         let v = fib_par pool (45) in
                          let _ = MVar.put v m in
                          printf "\nDomainslib: Fib 45 ans %d%!" v;
                      ) in
@@ -135,4 +138,4 @@ module MonadicMVar = struct
      printf "\nBoth the domains are done completed%!";
      T.teardown_pool pool
  
- let  _ = main () *)
+ let  _ = main ()
