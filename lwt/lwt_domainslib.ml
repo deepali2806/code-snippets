@@ -115,7 +115,7 @@ let main () =
     in v) 
     (fun v ->  printf "\nLwt: Hello %d%!" v; Lwt.return ())
     (fun e -> match e with 
-              | Suspend_take -> let y = suspend_take m in printf "\nLwt: Ohk so reaching here guys%!";y >>= 
+              | Suspend_take -> let y = suspend_take m in printf "\nLwt: Ohk so reaching here %!";y >>= 
     fun v ->
     printf "\nHello %d%!" v; Lwt.return ())
 

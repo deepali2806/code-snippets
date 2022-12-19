@@ -1,0 +1,55 @@
+(executable
+ (name suspendSinglePromise)
+ (modules suspendSinglePromise)
+ (libraries lwt lwt.unix domainslib base_mvar_interface)
+ (modes byte exe))
+
+
+
+(executable
+ (name testModule)
+ (modules testModule)
+ (libraries lwt lwt.unix domainslib base_mvar_interface)
+ (modes byte exe))
+ 
+ 
+ 
+(executable
+ (name basic)
+ (modules basic)
+ (libraries lwt lwt.unix domainslib base_mvar_interface)
+ (modes byte exe))
+ 
+ 
+ 
+(executable
+ (name checkMVar)
+ (modules checkMVar)
+ (libraries lwt lwt.unix domainslib unified_interface)
+ (modes byte exe))
+ 
+ 
+(executable
+ (name lwt_domainslib)
+ (modules lwt_domainslib)
+ (libraries lwt lwt.unix domainslib base_mvar_interface)
+ (modes byte exe))
+ 
+ 
+
+(executable
+ (name finalInterface)
+ (modules finalInterface)
+ (libraries lwt lwt.unix domainslib unified_interface)
+ (modes byte exe))
+ 
+ 
+
+
+
+
+
+
+ 
+
+

@@ -1,4 +1,10 @@
+(executable
+  (name bytesCstructBigarray)
+  (libraries unix str cstruct)
+  (modules bytesCstructBigarray)
+  (modes byte exe))
 
+ 
  (executable
   (name countLines)
   (libraries unix str)

@@ -1,7 +1,7 @@
 open Eio.Std
 open Eio_linux
 open Unix;;
-
+(* Consider file size is greater than blocksize *)
 module Int63 = Optint.Int63
 let block_size = try int_of_string Sys.argv.(1) with _ -> 4096
 let fibres = Eio.Semaphore.make 64
@@ -46,9 +46,9 @@ let () =
     Switch.run @@ fun sw ->
     let fd = Unix.handle_unix_error (Eio_linux.openfile ~sw filename Unix.[O_RDONLY]) 0 in 
     
-    Switch.run ( fun sw ->
-            Fibre.fork ~sw
-            (fun () ->  let buf = alloc () in
+    Switch.run ( fun _ ->
+        
+             let buf = alloc () in
                         let off = 0 in
                         let _ = read_exactly fd ~file_offset:(Int63.of_int off) buf block_size in 
                         let buffer = Uring.Region.to_cstruct ~len:block_size buf in
@@ -58,7 +58,7 @@ let () =
                         traceln "\nTime Difference for Cstruct %f" (t2-.t1);
                         traceln "Count in cstruct %d" cnt;
 		                free buf
-            );
+        
       );
 
     

@@ -22,3 +22,10 @@
   (libraries domainslib unix str)
   (modules countChars)
   (modes byte exe))
+  
+ (executable
+  (name fib_par)
+  (libraries domainslib unix str)
+  (modules fib_par)
+  (modes byte exe))
+    

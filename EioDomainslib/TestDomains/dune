@@ -1,0 +1,7 @@
+(executable
+  (name domain_suspend)
+  (enabled_if (= %{system} "linux"))
+  (modules domain_suspend)
+  (libraries domainslib unix str logs.fmt fmt.tty eio_domainslib_interface eio_linux eio_main)
+   (modes byte exe)
+  )

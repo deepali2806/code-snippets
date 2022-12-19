@@ -23,13 +23,35 @@ let () =
     let st = fstat fd in
     let file_size = Int63.of_int st.st_size in
 
-    (* let no_fibres = (st.st_size / blkSize) in *)
+    let no_fibres = (st.st_size / blkSize) in
     let clock = Eio.Stdenv.clock _env in
     let count = ref 0 in 
     let t1 = Eio.Time.now clock in
     (* traceln "The time is now %f" t1; *)
     Switch.run (fun sw ->
-        let rec read_block file_offset =
+       for i = 0 to no_fibres
+        do
+             Fibre.fork ~sw
+            (fun () ->  let buf = alloc () in
+                        let off = i*blkSize in
+                        let _ = read_exactly fd ~file_offset:(Int63.of_int off) buf blkSize in 
+                        let buffer = Uring.Region.to_cstruct ~len:noOfBytes buf in
+                        let cnt = countInBuffer buffer (blkSize-1) in
+                        count :=  !count + cnt;
+                        (* traceln "\nCount in each fibre %d currentvalue %d " cnt currentVal; *)
+                        (* traceln "Offset and number of fibre %d, %d" off i; *)
+		                free buf
+            );
+        done
+
+    );
+    let t2 = Eio.Time.now clock in
+    traceln "Final count is %d \nTime Difference %f" !count (t2-.t1);
+    traceln "\nSwitch is finished"
+
+
+
+(*  let rec read_block file_offset =
         let remaining = Int63.(sub file_size file_offset) in
         if remaining <> Int63.zero then 
         begin
@@ -48,10 +70,7 @@ let () =
         end
       in
       read_block Int63.zero  
-    );
-    let t2 = Eio.Time.now clock in
-    traceln "Final count is %d \nTime Difference %f" !count (t2-.t1);
-    traceln "\nSwitch is finished"
+       *)
 
 (* 
 let rec countInBuffer buffer noOfBytes init = 

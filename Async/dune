@@ -1,0 +1,22 @@
+(env
+  (dev
+    (flags (:standard -warn-error -A))))
+
+(executable
+ (name checkMVar)
+ (modules checkMVar)
+ (libraries async unix domainslib)
+ (modes byte exe))
+
+(executable
+ (name testAsync)
+ (modules testAsync)
+ (libraries async unix domainslib)
+ (modes byte exe))
+
+
+(executable
+ (name checkingAsyncwidDomain)
+ (modules checkingAsyncwidDomain)
+ (libraries async unix domainslib)
+ (modes byte exe))

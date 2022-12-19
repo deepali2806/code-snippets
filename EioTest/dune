@@ -1,5 +1,14 @@
 
 (executable
+ (name diffBytesCStruct)
+ (enabled_if (= %{system} "linux"))
+ (modules diffBytesCStruct)
+ (libraries unix logs.fmt fmt.tty eio_linux)
+ (modes byte exe))
+
+
+
+(executable
  (name countLineDomainMgrEio)
  (enabled_if (= %{system} "linux"))
  (modules countLineDomainMgrEio)

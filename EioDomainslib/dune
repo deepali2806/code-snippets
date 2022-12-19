@@ -1,3 +1,21 @@
+
+ (executable
+  (name eioDomainslib)
+  (enabled_if (= %{system} "linux"))
+  (modules eioDomainslib)
+  (libraries eio_linux eio_main domainslib unified_interface)
+  (modes byte exe)
+  )  
+
+  (executable
+  (name fiber_suspend_domainslib)
+  (enabled_if (= %{system} "linux"))
+  (modules fiber_suspend_domainslib)
+  (libraries eio_linux eio_main domainslib unified_interface)
+  (modes byte exe)
+  )
+
+
 (executable
   (name square_domain)
   (enabled_if (= %{system} "linux"))
@@ -59,23 +77,6 @@
   )  
 
 
-  (executable
-  (name affectEio_cancelAffectThread)
-  (enabled_if (= %{system} "linux"))
-  (modules affectEio_cancelAffectThread)
-  (libraries affect eio_linux eio_luv eio_main eio_domainslib_interface)
-   (modes byte exe)
-  )  
-
-
-(executable
-  (name affectEioTest)
-  (enabled_if (= %{system} "linux"))
-  (modules affectEioTest)
-  (libraries affect eio_linux eio_main eio_domainslib_interface)
-  (modes byte exe)
-  )  
-
 (executable
   (name server)
   (enabled_if (= %{system} "linux"))
@@ -91,3 +92,6 @@
   (libraries domainslib unix str logs.fmt fmt.tty eio_linux eio_main)
    (modes byte exe)
   )
+  
+
+  

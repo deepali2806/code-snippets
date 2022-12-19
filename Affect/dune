@@ -1,0 +1,31 @@
+(executable
+  (name affectEio_cancelAffectThread)
+  (enabled_if (= %{system} "linux"))
+  (modules affectEio_cancelAffectThread)
+  (libraries affect eio_linux eio_luv eio_main eio_domainslib_interface)
+   (modes byte exe)
+  )  
+
+(executable
+  (name affectEioTest)
+  (enabled_if (= %{system} "linux"))
+  (modules affectEioTest)
+  (libraries affect eio_linux eio_main eio_domainslib_interface)
+  (modes byte exe)
+  )  
+
+(executable
+  (name affectEio_diffDomain)
+  (enabled_if (= %{system} "linux"))
+  (modules affectEio_diffDomain)
+  (libraries affect eio_linux eio_main eio_domainslib_interface)
+  (modes byte exe)
+  )  
+  
+(executable
+  (name EioAffect)
+  (enabled_if (= %{system} "linux"))
+  (modules EioAffect)
+  (libraries eio_domainslib_interface eio_linux eio_main affect)
+   (modes byte exe)
+  )
